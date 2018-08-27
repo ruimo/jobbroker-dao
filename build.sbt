@@ -1,7 +1,13 @@
 name := "jobbroker-dao"
 organization := "com.ruimo"
-version := "1.0-SNAPSHOT"
 scalaVersion := "2.12.6"
+
+publishTo := Some(
+  Resolver.file(
+    "jobbroker-client-scala",
+    new File(Option(System.getenv("RELEASE_DIR")).getOrElse("/tmp"))
+  )
+)
 
 libraryDependencies += "com.typesafe.play" %% "anorm" % "2.5.3"
 libraryDependencies += "org.liquibase" % "liquibase-core" % "3.6.2"

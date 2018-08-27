@@ -13,7 +13,17 @@ case class AccountId(value: String) extends AnyVal
 
 case class ApplicationId(value: String) extends AnyVal
 
-case class Request(
+trait Request {
+  val id: RequestId
+  val accountId: AccountId
+  val applicationId: ApplicationId
+  val jobStatus: JobStatus
+  val acceptedTime: Instant
+  val jobStartTime: Option[Instant]
+  val jobEndTime: Option[Instant]
+}
+
+case class RequestImpl(
   id: RequestId,
   accountId: AccountId,
   applicationId: ApplicationId,
@@ -21,7 +31,7 @@ case class Request(
   acceptedTime: Instant,
   jobStartTime: Option[Instant],
   jobEndTime: Option[Instant]
-)
+) extends Request
 
 sealed trait JobStatus {
   val code: Long
@@ -63,7 +73,7 @@ object Request {
     SqlParser.get[Option[Instant]]("jobbroker_requests.job_start_time") ~
     SqlParser.get[Option[Instant]]("jobbroker_requests.job_end_time") map {
       case id~accId~appId~jobStatus~acceptedTime~jobStartTime~jobEndTime =>
-        Request(
+        RequestImpl(
           RequestId(id), AccountId(accId), ApplicationId(appId),
           JobStatus(jobStatus),
           acceptedTime, jobStartTime, jobEndTime
@@ -114,7 +124,7 @@ object Request {
     ).executeUpdate()
 
     val id: Long = SQL("select currval('jobbroker_requests_seq')").as(SqlParser.scalar[Long].single)
-    Request(RequestId(id), accountId, applicationId, JobStatus.JobQueued, now, None, None)
+    RequestImpl(RequestId(id), accountId, applicationId, JobStatus.JobQueued, now, None, None)
   }
 
   def submitJobWithBytes(

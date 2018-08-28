@@ -65,7 +65,7 @@ object JobStatus {
 
 object Request {
   val simple = {
-    SqlParser.get[Long]("jobbroker_requests.request_id") ~
+    SqlParser.get[Long]("jobbroker_requests.job_id") ~
     SqlParser.get[String]("jobbroker_requests.account_id") ~
     SqlParser.get[String]("jobbroker_requests.application_id") ~
     SqlParser.get[Long]("jobbroker_requests.job_status") ~
@@ -109,7 +109,7 @@ object Request {
     SQL(
       """
       insert into jobbroker_requests (
-        request_id, account_id, application_id, job_status, application_input, accepted_time
+        job_id, account_id, application_id, job_status, application_input, accepted_time
       ) values (
         (select nextval('jobbroker_requests_seq')),
         {accountId}, {applicationId}, {jobStatus}, {input}, {acceptedTime}
@@ -147,7 +147,7 @@ object Request {
       update jobbroker_requests set
         job_status = {newJobStatus},
         job_start_time = {startTime}
-      where request_id = {id} and job_status = {currentJobStatus}
+      where job_id = {id} and job_status = {currentJobStatus}
       """
     ).on(
       'id -> jobId.value,
@@ -159,7 +159,7 @@ object Request {
     if (updateCount == 1) {
       SQL(
         """
-        select * from jobbroker_requests where request_id = {id}
+        select * from jobbroker_requests where job_id = {id}
         """
       ).on(
         'id -> jobId.value
@@ -190,7 +190,7 @@ object Request {
         job_status = {newJobStatus},
         job_end_time = {endTime},
         application_output = {output}
-      where request_id = {id} and job_status = {currentJobStatus}
+      where job_id = {id} and job_status = {currentJobStatus}
       """
     ).on(
       'newJobStatus -> JobStatus.JobEnded.code,
@@ -203,7 +203,7 @@ object Request {
     if (updateCount == 1) {
       SQL(
         """
-        select * from jobbroker_requests where request_id = {id}
+        select * from jobbroker_requests where job_id = {id}
         """
       ).on(
         'id -> jobId.value
@@ -229,7 +229,7 @@ object Request {
     jobId: JobId, rowParser: RowParser[(Request, T)]
   )(implicit conn: Connection): (Request, T) = SQL(
     """
-    select * from jobbroker_requests where request_id = {id}
+    select * from jobbroker_requests where job_id = {id}
     """
   ).on(
     'id -> jobId.value

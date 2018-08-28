@@ -2,7 +2,7 @@
 
 --changeset shanai:1
 create table jobbroker_requests (
-  request_id bigint not null,
+  job_id bigint not null,
   account_id varchar(256) not null,
   application_id varchar(256) not null,
   job_status bigint not null,
@@ -13,7 +13,7 @@ create table jobbroker_requests (
   application_output blob
 );
 
-alter table jobbroker_requests add constraint pk_jobbroker_requests primary key (request_id);
+alter table jobbroker_requests add constraint pk_jobbroker_requests primary key (job_id);
 create index ix_jobbroker_requests_account_id on jobbroker_requests (account_id);
 create index ix_jobbroker_requests_application_id on jobbroker_requests (application_id);
 create index ix_jobbroker_requests_accepted_time on jobbroker_requests (accepted_time);

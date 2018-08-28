@@ -5,16 +5,16 @@ import java.sql.Connection
 import java.time.Instant
 
 import anorm._
-import scala.language.postfixOps
+import com.ruimo.jobbroker.JobId
 
-case class RequestId(value: Long) extends AnyVal
+import scala.language.postfixOps
 
 case class AccountId(value: String) extends AnyVal
 
 case class ApplicationId(value: String) extends AnyVal
 
 trait Request {
-  val id: RequestId
+  val id: JobId
   val accountId: AccountId
   val applicationId: ApplicationId
   val jobStatus: JobStatus
@@ -24,7 +24,7 @@ trait Request {
 }
 
 case class RequestImpl(
-  id: RequestId,
+  id: JobId,
   accountId: AccountId,
   applicationId: ApplicationId,
   jobStatus: JobStatus,
@@ -37,8 +37,8 @@ sealed trait JobStatus {
   val code: Long
 }
 
-class JobNotFoundException(val requestId: RequestId) extends RuntimeException(
-  "This request is already taken or not exists (id=" + requestId + ")"
+class JobNotFoundException(val jobId: JobId) extends RuntimeException(
+  "This request is already taken or not exists (id=" + jobId + ")"
 )
 
 object JobStatus {
@@ -74,7 +74,7 @@ object Request {
     SqlParser.get[Option[Instant]]("jobbroker_requests.job_end_time") map {
       case id~accId~appId~jobStatus~acceptedTime~jobStartTime~jobEndTime =>
         RequestImpl(
-          RequestId(id), AccountId(accId), ApplicationId(appId),
+          JobId(id), AccountId(accId), ApplicationId(appId),
           JobStatus(jobStatus),
           acceptedTime, jobStartTime, jobEndTime
         )
@@ -124,7 +124,7 @@ object Request {
     ).executeUpdate()
 
     val id: Long = SQL("select currval('jobbroker_requests_seq')").as(SqlParser.scalar[Long].single)
-    RequestImpl(RequestId(id), accountId, applicationId, JobStatus.JobQueued, now, None, None)
+    RequestImpl(JobId(id), accountId, applicationId, JobStatus.JobQueued, now, None, None)
   }
 
   def submitJobWithBytes(
@@ -140,7 +140,7 @@ object Request {
   )
 
   def retrieveJob[T](
-    requestId: RequestId, rowParser: RowParser[(Request, T)], now: Instant = Instant.now()
+    jobId: JobId, rowParser: RowParser[(Request, T)], now: Instant = Instant.now()
   )(implicit conn: Connection): (Request, T) = {
     val updateCount = SQL(
       """
@@ -150,7 +150,7 @@ object Request {
       where request_id = {id} and job_status = {currentJobStatus}
       """
     ).on(
-      'id -> requestId.value,
+      'id -> jobId.value,
       'currentJobStatus -> JobStatus.JobQueued.code,
       'newJobStatus -> JobStatus.JobRunning.code,
       'startTime -> now
@@ -162,27 +162,27 @@ object Request {
         select * from jobbroker_requests where request_id = {id}
         """
       ).on(
-        'id -> requestId.value
+        'id -> jobId.value
       ).as(rowParser.single)
     } else {
-      throw new JobNotFoundException(requestId)
+      throw new JobNotFoundException(jobId)
     }
   }
 
   def retrieveJobWithBytes(
-    requestId: RequestId, now: Instant = Instant.now()
+    jobId: JobId, now: Instant = Instant.now()
   )(implicit conn: Connection): (Request, Array[Byte]) = retrieveJob[Array[Byte]](
-    requestId, withInputBytes, now
+    jobId, withInputBytes, now
   )
 
   def retrieveJobWithStream(
-    requestId: RequestId, now: Instant = Instant.now()
+    jobId: JobId, now: Instant = Instant.now()
   )(implicit conn: Connection): (Request, InputStream) = retrieveJob[InputStream](
-    requestId, withInputStream, now
+    jobId, withInputStream, now
   )
 
   def storeJobResult[T](
-    requestId: RequestId, result: T, toParameterValue: T => ParameterValue, now: Instant = Instant.now()
+    jobId: JobId, result: T, toParameterValue: T => ParameterValue, now: Instant = Instant.now()
   )(implicit conn: Connection): Request = {
     val updateCount = SQL(
       """
@@ -196,7 +196,7 @@ object Request {
       'newJobStatus -> JobStatus.JobEnded.code,
       'endTime -> now,
       'output -> toParameterValue(result),
-      'id -> requestId.value,
+      'id -> jobId.value,
       'currentJobStatus -> JobStatus.JobRunning.code
     ).executeUpdate()
 
@@ -206,46 +206,46 @@ object Request {
         select * from jobbroker_requests where request_id = {id}
         """
       ).on(
-        'id -> requestId.value
+        'id -> jobId.value
       ).as(simple.single)
     } else {
-      throw new JobNotFoundException(requestId)
+      throw new JobNotFoundException(jobId)
     }
   }
 
   def storeJobResultWithBytes(
-    requestId: RequestId, result: Array[Byte], now: Instant = Instant.now()
+    jobId: JobId, result: Array[Byte], now: Instant = Instant.now()
   )(implicit conn: Connection): Request = storeJobResult(
-    requestId, result, (result: Array[Byte]) => ParameterValue.toParameterValue(result), now
+    jobId, result, (result: Array[Byte]) => ParameterValue.toParameterValue(result), now
   )
 
   def storeJobResultWithStream(
-    requestId: RequestId, result: InputStream, now: Instant = Instant.now()
+    jobId: JobId, result: InputStream, now: Instant = Instant.now()
   )(implicit conn: Connection): Request = storeJobResult(
-    requestId, result, (result: InputStream) => ParameterValue.toParameterValue(result), now
+    jobId, result, (result: InputStream) => ParameterValue.toParameterValue(result), now
   )
 
   def retrieveJobResult[T](
-    requestId: RequestId, rowParser: RowParser[(Request, T)]
+    jobId: JobId, rowParser: RowParser[(Request, T)]
   )(implicit conn: Connection): (Request, T) = SQL(
     """
     select * from jobbroker_requests where request_id = {id}
     """
   ).on(
-    'id -> requestId.value
+    'id -> jobId.value
   ).as(rowParser.singleOpt).getOrElse(
-    throw new JobNotFoundException(requestId)
+    throw new JobNotFoundException(jobId)
   )
 
   def retrieveJobResultWithBytes(
-    requestId: RequestId
+    jobId: JobId
   )(implicit conn: Connection): (Request, Array[Byte]) = retrieveJobResult(
-    requestId, withOutputBytes
+    jobId, withOutputBytes
   )
 
   def retrieveJobResultWithStream(
-    requestId: RequestId
+    jobId: JobId
   )(implicit conn: Connection): (Request, InputStream) = retrieveJobResult(
-    requestId, withOutputStream
+    jobId, withOutputStream
   )
 }

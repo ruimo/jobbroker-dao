@@ -6,6 +6,8 @@ import org.specs2.mutable._
 import java.sql.DriverManager
 import java.time.Instant
 
+import com.ruimo.jobbroker.JobId
+
 import scala.util.Random
 
 class RequestsSpec extends Specification {
@@ -111,9 +113,9 @@ class RequestsSpec extends Specification {
       org.h2.Driver.load()
       implicit val conn = DriverManager.getConnection("jdbc:h2:mem:test" + Random.nextLong())
       Migration.perform(conn)
-      Request.retrieveJobWithBytes(RequestId(1L)) must throwA[JobNotFoundException]
-      Request.storeJobResultWithBytes(RequestId(1L), new Array[Byte](1)) must throwA[JobNotFoundException]
-      Request.retrieveJobResultWithBytes(RequestId(1L)) must throwA[JobNotFoundException]
+      Request.retrieveJobWithBytes(JobId(1L)) must throwA[JobNotFoundException]
+      Request.storeJobResultWithBytes(JobId(1L), new Array[Byte](1)) must throwA[JobNotFoundException]
+      Request.retrieveJobResultWithBytes(JobId(1L)) must throwA[JobNotFoundException]
       conn.close()
       1 === 1
     }

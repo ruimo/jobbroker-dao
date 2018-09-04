@@ -47,7 +47,7 @@ object JobStatus {
   }
 
   val Table: List[JobStatus] = List(
-    JobQueued, JobRunning, JobEnded
+    JobQueued, JobRunning, JobEnded, JobSystemError
   )
 
   case object JobQueued extends JobStatus {

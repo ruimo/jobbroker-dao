@@ -61,6 +61,10 @@ object JobStatus {
   case object JobEnded extends JobStatus {
     val code = 2
   }
+
+  case object JobSystemError extends JobStatus {
+    val code = 3
+  }
 }
 
 object Request {
@@ -182,7 +186,8 @@ object Request {
   )
 
   def storeJobResult[T](
-    jobId: JobId, result: T, toParameterValue: T => ParameterValue, now: Instant = Instant.now()
+    jobId: JobId, result: T, toParameterValue: T => ParameterValue, now: Instant = Instant.now(),
+    jobStatus: JobStatus = JobStatus.JobEnded
   )(implicit conn: Connection): Request = {
     val updateCount = SQL(
       """
@@ -193,7 +198,7 @@ object Request {
       where job_id = {id} and job_status = {currentJobStatus}
       """
     ).on(
-      'newJobStatus -> JobStatus.JobEnded.code,
+      'newJobStatus -> jobStatus.code,
       'endTime -> now,
       'output -> toParameterValue(result),
       'id -> jobId.value,
@@ -214,15 +219,17 @@ object Request {
   }
 
   def storeJobResultWithBytes(
-    jobId: JobId, result: Array[Byte], now: Instant = Instant.now()
+    jobId: JobId, result: Array[Byte], now: Instant = Instant.now(),
+    jobStatus: JobStatus = JobStatus.JobEnded
   )(implicit conn: Connection): Request = storeJobResult(
-    jobId, result, (result: Array[Byte]) => ParameterValue.toParameterValue(result), now
+    jobId, result, (result: Array[Byte]) => ParameterValue.toParameterValue(result), now, jobStatus
   )
 
   def storeJobResultWithStream(
-    jobId: JobId, result: InputStream, now: Instant = Instant.now()
+    jobId: JobId, result: InputStream, now: Instant = Instant.now(),
+    jobStatus: JobStatus = JobStatus.JobEnded
   )(implicit conn: Connection): Request = storeJobResult(
-    jobId, result, (result: InputStream) => ParameterValue.toParameterValue(result), now
+    jobId, result, (result: InputStream) => ParameterValue.toParameterValue(result), now, jobStatus
   )
 
   def retrieveJobResult[T](

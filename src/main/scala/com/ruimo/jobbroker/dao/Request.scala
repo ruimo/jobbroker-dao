@@ -133,8 +133,6 @@ object Request {
     ).executeUpdate()
 
     val id: Long = SQL("select currval('jobbroker_requests_seq')").as(SqlParser.scalar[Long].single)
-conn.commit()
-println("Transaction committed.")
     RequestImpl(JobId(id), accountId, applicationId, JobStatus.JobQueued, now, None, None)
   }
 

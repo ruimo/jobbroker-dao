@@ -255,4 +255,34 @@ object Request {
   )(implicit conn: Connection): (Request, InputStream) = retrieveJobResult(
     jobId, withOutputStream
   )
+
+  def deleteObsoleteRecords(
+    notStartedTimeoutInSecs: Long = 3 * 60,
+    notEndedTimeoutInSecs: Long = 10 * 60,
+    endedTimeoutInSecs: Long = 30 * 60,
+    now: Instant = Instant.now()
+  )(implicit conn: Connection): Long = SQL(
+    """
+    delete from jobbroker_requests
+    where (
+      job_status = {queuedStatus} and
+      extract(epoch from accepted_time) + {notStartedTimeoutInSecs} < extract(epoch from {now})
+    ) or (
+      job_status = {runningStatus} and
+      extract(epoch from job_start_time) + {notEndedTimeoutInSecs} < extract(epoch from {now})
+    ) or (
+      (job_status = {endedStatus} or job_status = {systemErrorStatus}) and
+      extract(epoch from job_start_time) + {endedTimeoutInSecs} < extract(epoch from {now})
+    )
+    """
+  ).on(
+    'queuedStatus -> JobStatus.JobQueued.code,
+    'notStartedTimeoutInSecs -> notStartedTimeoutInSecs,
+    'runningStatus -> JobStatus.JobRunning.code,
+    'notEndedTimeoutInSecs -> notEndedTimeoutInSecs,
+    'endedStatus -> JobStatus.JobEnded.code,
+    'systemErrorStatus -> JobStatus.JobSystemError.code,
+    'endedTimeoutInSecs -> endedTimeoutInSecs,
+    'now -> now
+  ).executeUpdate()
 }

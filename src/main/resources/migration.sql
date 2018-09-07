@@ -9,8 +9,8 @@ create table jobbroker_requests (
   accepted_time timestamp,
   job_start_time timestamp,
   job_end_time timestamp,
-  application_input blob not null,
-  application_output blob
+  application_input bytea not null,
+  application_output bytea
 );
 
 alter table jobbroker_requests add constraint pk_jobbroker_requests primary key (job_id);

@@ -6,6 +6,7 @@ import java.time.Instant
 
 import anorm._
 import com.ruimo.jobbroker.JobId
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.language.postfixOps
 
@@ -68,6 +69,8 @@ object JobStatus {
 }
 
 object Request {
+  val logger: Logger = LoggerFactory.getLogger(getClass)
+
   val simple = {
     SqlParser.get[Long]("jobbroker_requests.job_id") ~
     SqlParser.get[String]("jobbroker_requests.account_id") ~
@@ -110,6 +113,8 @@ object Request {
   def submitJob[T](
     accountId: AccountId, applicationId: ApplicationId, in: T, toParmeterValue: T => ParameterValue, now: Instant = Instant.now()
   )(implicit conn: Connection): Request = {
+    logger.info("submitJob(" + accountId + ", " + applicationId + ") called.")
+
     SQL(
       """
       insert into jobbroker_requests (
@@ -146,6 +151,8 @@ object Request {
   def retrieveJob[T](
     jobId: JobId, rowParser: RowParser[(Request, T)], now: Instant = Instant.now()
   )(implicit conn: Connection): (Request, T) = {
+    logger.info("retrieveJob(" + jobId + ") called.")
+
     val updateCount = SQL(
       """
       update jobbroker_requests set
@@ -189,6 +196,8 @@ object Request {
     jobId: JobId, result: T, toParameterValue: T => ParameterValue, now: Instant = Instant.now(),
     jobStatus: JobStatus = JobStatus.JobEnded
   )(implicit conn: Connection): Request = {
+    logger.info("storeJobResult(" + jobId + ", " + jobStatus + ") called.")
+
     val updateCount = SQL(
       """
       update jobbroker_requests set
@@ -234,15 +243,18 @@ object Request {
 
   def retrieveJobResult[T](
     jobId: JobId, rowParser: RowParser[(Request, T)]
-  )(implicit conn: Connection): (Request, T) = SQL(
-    """
-    select * from jobbroker_requests where job_id = {id}
-    """
-  ).on(
-    'id -> jobId.value
-  ).as(rowParser.singleOpt).getOrElse(
-    throw new JobNotFoundException(jobId)
-  )
+  )(implicit conn: Connection): (Request, T) = {
+    logger.info("retrieveJobResult(" + jobId + ") called.")
+    SQL(
+      """
+      select * from jobbroker_requests where job_id = {id}
+      """
+    ).on(
+      'id -> jobId.value
+    ).as(rowParser.singleOpt).getOrElse(
+      throw new JobNotFoundException(jobId)
+    )
+  }
 
   def retrieveJobResultWithBytes(
     jobId: JobId

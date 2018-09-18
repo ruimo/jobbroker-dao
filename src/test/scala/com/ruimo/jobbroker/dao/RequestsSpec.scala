@@ -42,14 +42,14 @@ class RequestsSpec extends Specification {
       req03.jobStartTime === Some(Instant.ofEpochMilli(234L))
       req03.jobEndTime === Some(Instant.ofEpochMilli(345L))
 
-      val (req04: Request, result: Array[Byte] ) = Request.retrieveJobResultWithBytes(req.id)
+      val (req04: Request, result: Option[Array[Byte]] ) = Request.retrieveJobResultWithBytes(req.id)
       req04.accountId === AccountId("account01")
       req04.applicationId === ApplicationId("app01")
       req04.jobStatus === JobStatus.JobEnded
       req04.acceptedTime === Instant.ofEpochMilli(123L)
       req04.jobStartTime === Some(Instant.ofEpochMilli(234L))
       req04.jobEndTime === Some(Instant.ofEpochMilli(345L))
-      (new String(result, "utf-8")) === "Result"
+      (new String(result.get, "utf-8")) === "Result"
     }
 
     "Can create job by a stream." in new WithInMemoryDb {
@@ -84,7 +84,7 @@ class RequestsSpec extends Specification {
       req03.jobStartTime === Some(Instant.ofEpochMilli(234L))
       req03.jobEndTime === Some(Instant.ofEpochMilli(345L))
 
-      val (req04: Request, is02: InputStream) = Request.retrieveJobResultWithStream(req03.id)
+      val (req04: Request, is02: Option[InputStream]) = Request.retrieveJobResultWithStream(req03.id)
       req04.accountId === AccountId("account01")
       req04.applicationId === ApplicationId("app01")
       req04.jobStatus === JobStatus.JobEnded
@@ -92,7 +92,7 @@ class RequestsSpec extends Specification {
       req04.jobStartTime === Some(Instant.ofEpochMilli(234L))
       req04.jobEndTime === Some(Instant.ofEpochMilli(345L))
       val buf02 = new Array[Byte](6)
-      new DataInputStream(is02).readFully(buf02)
+      new DataInputStream(is02.get).readFully(buf02)
       new String(buf02, "utf-8") === "Result"
     }
 

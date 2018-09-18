@@ -91,8 +91,8 @@ object Request {
   val inputBytes: RowParser[Array[Byte]] = SqlParser.get[Array[Byte]]("jobbroker_requests.application_input")
   val inputStream: RowParser[InputStream] = SqlParser.get[InputStream]("jobbroker_requests.application_input")
 
-  val outputBytes: RowParser[Array[Byte]] = SqlParser.get[Array[Byte]]("jobbroker_requests.application_output")
-  val outputStream: RowParser[InputStream] = SqlParser.get[InputStream]("jobbroker_requests.application_output")
+  val outputBytes: RowParser[Option[Array[Byte]]] = SqlParser.get[Option[Array[Byte]]]("jobbroker_requests.application_output")
+  val outputStream: RowParser[Option[InputStream]] = SqlParser.get[Option[InputStream]]("jobbroker_requests.application_output")
 
   val withInputBytes: RowParser[(Request, Array[Byte])] = simple ~ inputBytes map {
     case req~in => (req, in)
@@ -102,11 +102,11 @@ object Request {
     case req~in => (req, in)
   }
 
-  val withOutputBytes: RowParser[(Request, Array[Byte])] = simple ~ outputBytes map {
+  val withOutputBytes: RowParser[(Request, Option[Array[Byte]])] = simple ~ outputBytes map {
     case req~out => (req, out)
   }
 
-  val withOutputStream: RowParser[(Request, InputStream)] = simple ~ outputStream map {
+  val withOutputStream: RowParser[(Request, Option[InputStream])] = simple ~ outputStream map {
     case req~out => (req, out)
   }
 
@@ -260,13 +260,13 @@ object Request {
 
   def retrieveJobResultWithBytes(
     jobId: JobId
-  )(implicit conn: Connection): (Request, Array[Byte]) = retrieveJobResult(
+  )(implicit conn: Connection): (Request, Option[Array[Byte]]) = retrieveJobResult(
     jobId, withOutputBytes
   )
 
   def retrieveJobResultWithStream(
     jobId: JobId
-  )(implicit conn: Connection): (Request, InputStream) = retrieveJobResult(
+  )(implicit conn: Connection): (Request, Option[InputStream]) = retrieveJobResult(
     jobId, withOutputStream
   )
 

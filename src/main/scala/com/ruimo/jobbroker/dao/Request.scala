@@ -155,6 +155,10 @@ object Request {
   )(implicit conn: Connection): (Request, T) = {
     logger.info("retrieveJob(" + jobId + ") called.")
 
+(1 to 5).foreach { i =>
+println(SQL("select * from jobbroker_requests where job_id = {id}").on('id -> jobId.value).as(simple *))
+Thread.sleep(3000)
+}
     val updateCount = SQL(
       """
       update jobbroker_requests set

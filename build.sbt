@@ -16,7 +16,7 @@ libraryDependencies += "org.playframework.anorm" %% "anorm" % "2.6.2"
 libraryDependencies += "org.liquibase" % "liquibase-core" % "3.6.2"
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.2"
 
-libraryDependencies += "org.specs2" %% "specs2-core" % "4.3.2" % Test
+libraryDependencies += "org.specs2" %% "specs2-core" % "4.3.3" % Test
 libraryDependencies += "com.h2database"  %  "h2" % "1.4.197" % Test
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")

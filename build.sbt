@@ -12,7 +12,7 @@ publishTo := Some(
 resolvers += "ruimo.com" at "http://static.ruimo.com/release"
 
 libraryDependencies += "com.ruimo" %% "jobbroker-common" % "1.0-SNAPSHOT"
-libraryDependencies += "com.typesafe.play" %% "anorm" % "2.5.3"
+libraryDependencies += "org.playframework.anorm" %% "anorm" % "2.6.2"
 libraryDependencies += "org.liquibase" % "liquibase-core" % "3.6.2"
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.2"
 

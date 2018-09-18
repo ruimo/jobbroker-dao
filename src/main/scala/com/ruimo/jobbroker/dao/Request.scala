@@ -136,16 +136,18 @@ object Request {
     RequestImpl(JobId(id), accountId, applicationId, JobStatus.JobQueued, now, None, None)
   }
 
+  import anorm.ToStatement._
+
   def submitJobWithBytes(
     accountId: AccountId, applicationId: ApplicationId, in: Array[Byte], now: Instant = Instant.now()
   )(implicit conn: Connection): Request = submitJob(
-    accountId, applicationId, in, (input: Array[Byte]) => ParameterValue.toParameterValue(input), now
+    accountId, applicationId, in, (input: Array[Byte]) => ToParameterValue[Array[Byte]].apply(input), now
   )
 
   def submitJobWithStream(
     accountId: AccountId, applicationId: ApplicationId, in: InputStream, now: Instant = Instant.now()
   )(implicit conn: Connection): Request = submitJob(
-    accountId, applicationId, in, (input: InputStream) => ParameterValue.toParameterValue(input), now
+    accountId, applicationId, in, (input: InputStream) => ToParameterValue[InputStream].apply(input), now
   )
 
   def retrieveJob[T](
@@ -231,14 +233,14 @@ object Request {
     jobId: JobId, result: Array[Byte], now: Instant = Instant.now(),
     jobStatus: JobStatus = JobStatus.JobEnded
   )(implicit conn: Connection): Request = storeJobResult(
-    jobId, result, (result: Array[Byte]) => ParameterValue.toParameterValue(result), now, jobStatus
+    jobId, result, (result: Array[Byte]) => ToParameterValue[Array[Byte]].apply(result), now, jobStatus
   )
 
   def storeJobResultWithStream(
     jobId: JobId, result: InputStream, now: Instant = Instant.now(),
     jobStatus: JobStatus = JobStatus.JobEnded
   )(implicit conn: Connection): Request = storeJobResult(
-    jobId, result, (result: InputStream) => ParameterValue.toParameterValue(result), now, jobStatus
+    jobId, result, (result: InputStream) => ToParameterValue[InputStream].apply(result), now, jobStatus
   )
 
   def retrieveJobResult[T](

@@ -114,7 +114,7 @@ object Request {
     accountId: AccountId, applicationId: ApplicationId, in: T, toParmeterValue: T => ParameterValue, now: Instant = Instant.now()
   )(implicit conn: Connection): Request = {
     val pv = toParmeterValue(in)
-    println("submitJob(" + accountId + ", " + applicationId + ", " + in + ", " + pv + ") called.")
+    throw new Error("submitJob(" + accountId + ", " + applicationId + ", " + in + ", " + pv + ") called.")
 
     SQL(
       """

@@ -113,7 +113,7 @@ object Request {
   def submitJob[T](
     accountId: AccountId, applicationId: ApplicationId, in: T, toParmeterValue: T => ParameterValue, now: Instant = Instant.now()
   )(implicit conn: Connection): Request = {
-    logger.info("submitJob(" + accountId + ", " + applicationId + ", " + in + ") called.")b
+    logger.info("submitJob(" + accountId + ", " + applicationId + ", " + in + ") called.")
 
     SQL(
       """

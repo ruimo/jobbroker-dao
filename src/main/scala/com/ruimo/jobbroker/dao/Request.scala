@@ -115,8 +115,8 @@ object Request {
     applicationId: Option[ApplicationId] = None,
     jobStatus: JobStatus
   )(implicit conn: Connection): Long = SQL(
-    "select count(*) from jobbroker_request where " +
-      "jobStatus = {jobStatus} " +
+    "select count(*) from jobbroker_requests where " +
+      "job_status = {jobStatus} " +
       accountId.map(aid => "and account_id = {accountId} ").getOrElse("") +
       applicationId.map(apid => "and application_id = {applicationId}").getOrElse("")
   ).on(

@@ -11,7 +11,7 @@ import com.ruimo.jobbroker.JobId
 import scala.util.Random
 import anorm._
 
-class RequestsSpec extends Specification {
+class RequestSpec extends Specification {
   "Requests" should {
     "Can create job by an array of byte." in new WithInMemoryDb {
       val req = Request.submitJobWithBytes(
@@ -168,6 +168,50 @@ class RequestsSpec extends Specification {
       ids.contains(req22.id.value) === true
       ids.contains(req31.id.value) === true
       ids.contains(req32.id.value) === true
+    }
+
+    "Can count job" in new WithInMemoryDb {
+      Request.count(jobStatus = JobStatus.JobQueued) === 0
+
+      val req01 = Request.submitJobWithBytes(
+        AccountId("account01"),
+        ApplicationId("app01"),
+        "Hello".getBytes("utf-8"),
+        Instant.ofEpochMilli(123L)
+      )
+
+      Request.count(jobStatus = JobStatus.JobQueued) === 1
+      Request.count(jobStatus = JobStatus.JobRunning) === 0
+      Request.count(accountId = Some(AccountId("account01")), jobStatus = JobStatus.JobQueued) === 1
+      Request.count(accountId = Some(AccountId("account01")), jobStatus = JobStatus.JobRunning) === 0
+      Request.count(accountId = Some(AccountId("account02")), jobStatus = JobStatus.JobQueued) === 0
+      Request.count(applicationId = Some(ApplicationId("app01")), jobStatus = JobStatus.JobQueued) === 1
+      Request.count(applicationId = Some(ApplicationId("app01")), jobStatus = JobStatus.JobRunning) === 0
+      Request.count(applicationId = Some(ApplicationId("app02")), jobStatus = JobStatus.JobQueued) === 0
+
+      Request.count(
+        accountId = Some(AccountId("account01")),
+        applicationId = Some(ApplicationId("app01")),
+        jobStatus = JobStatus.JobQueued
+      ) === 1
+
+      Request.count(
+        accountId = Some(AccountId("account01")),
+        applicationId = Some(ApplicationId("app01")),
+        jobStatus = JobStatus.JobRunning
+      ) === 0
+
+      Request.count(
+        accountId = Some(AccountId("account01")),
+        applicationId = Some(ApplicationId("app02")),
+        jobStatus = JobStatus.JobQueued
+      ) === 0
+
+      Request.count(
+        accountId = Some(AccountId("account02")),
+        applicationId = Some(ApplicationId("app01")),
+        jobStatus = JobStatus.JobQueued
+      ) === 0
     }
   }
 }

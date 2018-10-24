@@ -110,6 +110,21 @@ object Request {
     case req~out => (req, out)
   }
 
+  def count(
+    accountId: Option[AccountId] = None,
+    applicationId: Option[ApplicationId] = None,
+    jobStatus: JobStatus
+  )(implicit conn: Connection): Long = SQL(
+    "select count(*) from jobbroker_request where " +
+      "jobStatus = {jobStatus} " +
+      accountId.map(aid => "and account_id = {accountId} ").getOrElse("") +
+      applicationId.map(apid => "and application_id = {applicationId}").getOrElse("")
+  ).on(
+    Seq[NamedParameter](NamedParameter.namedWithSymbol('jobStatus, jobStatus.code)) ++
+      accountId.map(aid => (NamedParameter.namedWithSymbol('accountId, aid.value))) ++
+      applicationId.map(apid => (NamedParameter.namedWithSymbol('applicationId, apid.value))) :_*
+  ).as(SqlParser.scalar[Long].single)
+
   def submitJob[T](
     accountId: AccountId, applicationId: ApplicationId, in: T, toParmeterValue: T => ParameterValue, now: Instant = Instant.now()
   )(implicit conn: Connection): Request = {
